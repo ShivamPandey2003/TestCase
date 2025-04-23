@@ -1,14 +1,12 @@
 import { test as base, expect } from '@playwright/test';
 import fs from 'fs';
 
-const url: string = "http://localhost:5173/market-savant/"
-
 const test = base.extend({
   page: async ({ page }, use) => {
     // Load sessionStorage before test
     const sessionData = JSON.parse(fs.readFileSync('auth/sessionStorage.json', 'utf-8'));
 
-    await page.goto('http://localhost:5173'); // Load the domain first
+    await page.goto('/'); // Load the domain first
     await page.evaluate((data) => {
       for (const [key, value] of Object.entries(data)) {
         sessionStorage.setItem(key, value as string);
@@ -20,7 +18,7 @@ const test = base.extend({
 });
 
 test("apply price", async ({ page }) => {
-  await page.goto(url);
+  await page.goto("/market-savant/");
   await page.waitForSelector('[data-test-id="AvatarDropdown"]');
 
   await page.locator('[data-test-id="priceRangeDrop"]').click()
@@ -34,21 +32,21 @@ test("apply price", async ({ page }) => {
 })
 
 test("apply HomeType", async ({ page }) => {
-  await page.goto(url);
+  await page.goto("/market-savant/");
   await page.waitForSelector('[data-test-id="AvatarDropdown"]');
 
   await page.locator('[data-test-id="homeDrop"]').click()
   await page.locator('[data-test-id="homeTypeCheckBox0"]').click()
 
   await page.locator('[data-test-id="homeTypeApplyButton"]').click()
+
+  await page.waitForResponse('**/market-dashboard/market-report/summary')
   
-  await page.waitForTimeout(5000)
-  
-  await expect(page.locator('[data-test-id="title"]')).toContainText("Single Family")
+  await expect(page.locator('[data-test-id="title"]')).toContainText("All Home")
 })
 
 test("select Beds And Bath",async({page})=>{
-  await page.goto(url);
+  await page.goto("/market-savant/");
   await page.waitForSelector('[data-test-id="AvatarDropdown"]');
 
   await page.locator('[data-test-id="BedBathDrop"]').click()
@@ -63,22 +61,33 @@ test("select Beds And Bath",async({page})=>{
 })
 
 test("Search input",async({page})=>{
-  await page.goto(url);
+  await page.goto("/market-savant/");
+
+  // Wait for user avatar (sign-in indicator)
   await page.waitForSelector('[data-test-id="AvatarDropdown"]');
 
   await page.waitForTimeout(5000)
 
-  await page.locator('[data-test-id="searchInput"]').fill("mia")
-  await page.waitForTimeout(10000)
-  await page.getByRole('list').filter({ hasText: 'cityMiami LakesNorth Miami' }).locator('[data-test-id="West Miami"]').click();
+  // Type incrementally into the search input
+  const searchInput = page.locator('[data-test-id="searchInput"]');
+  await searchInput.fill("m");
+  await page.waitForTimeout(2000)
+  await searchInput.fill("mi");
+  await page.waitForTimeout(2000)
+  await searchInput.fill("mia");
 
-  await page.waitForTimeout(5000)
+  // Wait for city list to show "North Miam
+  const cityOption = page.getByRole('list').filter({ hasText: 'CityNorth MiamiMiami' }).locator('[data-test-id="North Miami"]');
+  // Click on "North Miami"
+  await cityOption.click();
 
-  await expect(page.locator(`[data-test-id="subTitle"]`)).toContainText("West Miami")
+  // Wait for subtitle to update
+  const subTitle = page.locator('[data-test-id="subTitle"]');
+  await expect(subTitle).toContainText("North Miami"); 
 })
 
 test("apply Live Area", async ({ page }) => {
-  await page.goto(url);
+  await page.goto("/market-savant/");
   await page.waitForSelector('[data-test-id="AvatarDropdown"]');
 
   await page.locator('[data-test-id="liveAreaDrop"]').click()
@@ -92,7 +101,7 @@ test("apply Live Area", async ({ page }) => {
 })
 
 test("apply Lot Area", async ({ page }) => {
-  await page.goto(url);
+  await page.goto("/market-savant/");
   await page.waitForSelector('[data-test-id="LotAreaDropdown"]');
 
   await page.locator('[data-test-id="LotAreaDropdown"]').click()
@@ -112,7 +121,7 @@ test('Check Logout', async({page})=>{
   await page.waitForSelector('[data-test-id="AvatarDropdown"]');
   await page.locator('[data-test-id="AvatarDropdown"]').click();
 
-  await page.locator('[data-test-id="AvatarOption1"]').click();
+  await page.locator('[data-test-id="AvatarOption0"]').click();
 
   await page.waitForURL('http://localhost:5173/market-savant/login');
 

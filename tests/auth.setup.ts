@@ -1,19 +1,18 @@
 import { test as setup, expect } from '@playwright/test';
 import fs from 'fs';
+import { password, username } from '../playwright.config';
 
 const authFile = 'auth/user.json';
-const url = "http://localhost:5173/market-savant/login";
-
 
 setup("authenticate", async ({ page }) => {
-  await page.goto(url);
+  await page.goto('/market-savant/login');
 
-  await page.getByPlaceholder('Enter your e-mail address').fill("shivam.pandey@knowledgeexcel.com");
-  await page.getByPlaceholder('Enter your password').fill("Shivam@12345!");
+  await page.getByPlaceholder('Enter your e-mail address').fill(username);
+  await page.getByPlaceholder('Enter your password').fill(password);
 
   await page.locator('[type="submit"]').click();
 
-  await page.waitForURL('http://localhost:5173/market-savant');
+  await page.waitForURL('/market-savant');
   await expect(page.locator(`[data-slot="input"]`)).toBeVisible();
 
   const sessionStorageData = await page.evaluate(() => {
